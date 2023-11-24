@@ -23,7 +23,7 @@ TEST(MOC_Solver, MOC_Layer)
         moc_solver<1>::specific_layer> composite_layer(10);
 
     //“екущий и предыдущий слой, каждый из которых представл€ет собой composite_layer (Var+Specific)
-    custom_buffer_t<composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer>> buffer(2, 10);
+    ring_buffer_t<composite_layer_t<profile_collection_t<1>, moc_solver<1>::specific_layer>> buffer(2, 10);
 
     //ѕолучение текущего/предыдущего сло€
     const composite_layer_t<var_layer, moc_solver<1>::specific_layer>& prev = buffer.previous();
@@ -42,7 +42,7 @@ TEST(MOC_Solver, MOC_Layer_Refactor)
     typedef composite_layer_t<target_var_t, moc_solver<1>::specific_layer> layer_t;
 
     //“екущий и предыдущий слой, каждый из которых представл€ет собой composite_layer (Var+Specific)
-    custom_buffer_t<layer_t> buffer(2, 10);
+    ring_buffer_t<layer_t> buffer(2, 10);
 
     //ѕолучение текущего/предыдущего сло€
     const layer_t& prev = buffer.previous();
@@ -62,13 +62,13 @@ TEST(MOC_Solver, UseCase_Advection)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     // ќдна переменна€, и структуры метода характеристик дл€ нееm
     typedef composite_layer_t<profile_collection_t<1>,
         moc_solver<1>::specific_layer> single_var_moc_t;
 
-    custom_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
+    ring_buffer_t<single_var_moc_t> buffer(2, pipe.profile.getPointCount());
 
     buffer.advance(+1);
     single_var_moc_t& prev = buffer.previous();
@@ -100,12 +100,12 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Buffer)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     // ќдна переменна€, и структуры метода характеристик дл€ нее
     typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных дл€ сло€ плотности и серы, 2 - количество профилей
 
-    custom_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
+    ring_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
     // каждого профил€ в каждом слое
     density_sulfur_layer_t& prev = buffer.previous();
     density_sulfur_layer_t& curr = buffer.current();
@@ -127,12 +127,12 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation)
     simple_pipe.diameter = 0.7;
     simple_pipe.dx = 1000;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     // ќдна переменна€, и структуры метода характеристик дл€ нее
     typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных дл€ сло€ плотности и серы, 2 - количество профилей
 
-    custom_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
+    ring_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
     // каждого профил€ в каждом слое
     density_sulfur_layer_t& prev = buffer.previous();
     density_sulfur_layer_t& curr = buffer.current();
@@ -298,12 +298,12 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
     double pipe_len = 50e3;
     //double step_len = simple_pipe.dx;
 
-    PipeProperties pipe = PipeProperties::build_simple_pipe(simple_pipe);
+    pipe_properties_t pipe = pipe_properties_t::build_simple_pipe(simple_pipe);
 
     // ќдна переменна€, и структуры метода характеристик дл€ нее
     typedef composite_layer_t<profile_collection_t<2>> density_sulfur_layer_t; //тип данных дл€ сло€ плотности и серы, 2 - количество профилей
 
-    custom_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
+    ring_buffer_t<density_sulfur_layer_t> buffer(2, pipe.profile.getPointCount()); //2 - количество слоев, getPointCount - размерность 
     // каждого профил€ в каждом слое
     density_sulfur_layer_t& prev = buffer.previous();
     density_sulfur_layer_t& curr = buffer.current();
@@ -327,14 +327,14 @@ TEST(MOC_Solver, UseCase_Advection_Density_Sulfur_Calculation_Class)
 
 
 
-    transport_equation_solver simple_solver(simple_pipe.length, simple_pipe.dx, flow, rho_curr, rho_prev);
-    simple_solver.simple_step(rho_in, rho_out);
-    transport_equation_solver simple_solver(simple_pipe.length, simple_pipe.dx, flow, sulfur_curr, sulfur_prev);
-    simple_solver.simple_step(sulfur_in, sulfur_out);
+    transport_equation_solver simple_solver_rho(simple_pipe.length, simple_pipe.dx, flow, rho_curr, rho_prev);
+    simple_solver_rho.simple_step(rho_in, rho_out);
+    transport_equation_solver simple_solver_sulfur(simple_pipe.length, simple_pipe.dx, flow, sulfur_curr, sulfur_prev);
+    simple_solver_sulfur.simple_step(sulfur_in, sulfur_out);
     buffer.advance(+1);
 
-    simple_solver.print_layers(rho_curr, filename_rho);
-    simple_solver.print_layers(sulfur_curr, filename_sulfur);
+    simple_solver_rho.print_layers(rho_curr, filename_rho);
+    simple_solver_sulfur.print_layers(sulfur_curr, filename_sulfur);
 
 }
 
@@ -348,13 +348,13 @@ TEST(MOC_Solver, UseCase_Waterhammer)
 
     typedef composite_layer_t<layer_variables_type, layer_moc_type> composite_layer_type;
 
-    custom_buffer_t<composite_layer_type> buffer(2, 3);
+    ring_buffer_t<composite_layer_type> buffer(2, 3);
 
-    PipeProperties pipe;
+    pipe_properties_t pipe;
     pipe.profile.coordinates = { 0, 1000, 2000 };
     pipe.profile.heights = pipe.profile.capacity = vector<double>(pipe.profile.coordinates.size(), 0);
 
-    OilParameters oil;
+    oil_parameters_t oil;
     PipeModelPGConstArea pipeModel(pipe, oil);
 
     profile_wrapper<double, 2> start_layer(get_profiles_pointers(buffer.current().vars.point_double));
